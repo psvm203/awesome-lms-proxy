@@ -1,14 +1,10 @@
 use worker::*;
 
 const FRONTEND_ORIGIN: &str = "http://localhost:3000";
-const LMS_URL: &str = "https://lms.pknu.ac.kr/ilos/main/main_form.acl";
+const LMS_LOGIN_URL: &str = "https://lms.pknu.ac.kr/ilos/lo/login.acl";
 
 #[event(fetch)]
-async fn fetch(
-    req: Request,
-    _env: Env,
-    _ctx: Context,
-) -> Result<Response> {
+async fn fetch(req: Request, _env: Env, _ctx: Context) -> Result<Response> {
     let method = req.method().clone();
     let path = req.path();
 
@@ -17,34 +13,43 @@ async fn fetch(
     }
 
     match (method, path.as_str()) {
-        (Method::Get, "/session") => create_session().await,
+        (Method::Post, "/login") => login(req).await,
         _ => with_cors(Response::error("Not Found", 404)?),
     }
 }
 
-async fn create_session() -> Result<Response> {
+async fn login(mut req: Request) -> Result<Response> {
+    let login_body = req.text().await?;
+
     let mut init = RequestInit::new();
-    init.with_method(Method::Get);
+    init.with_method(Method::Post);
     init.with_redirect(RequestRedirect::Manual);
-    let lms_req = Request::new_with_init(LMS_URL, &init)?;
-    let lms_res = Fetch::Request(lms_req).send().await?;
+    init.with_body(Some(login_body.into()));
 
-    let Some(set_cookie) = lms_res.headers().get("set-cookie")? else {
-        return with_cors(Response::error("LMS did not return a session cookie", 502)?);
+    let mut lms_req = Request::new_with_init(LMS_LOGIN_URL, &init)?;
+    let lms_headers = lms_req.headers_mut()?;
+    lms_headers.set("Content-Type", "application/x-www-form-urlencoded")?;
+
+    let mut lms_res = Fetch::Request(lms_req).send().await?;
+    let lms_body = lms_res.text().await?;
+    let login_success = is_login_success(&lms_body);
+
+    let mut res = if login_success {
+        Response::empty()?.with_status(204)
+    } else {
+        Response::error("Invalid LMS credentials", 401)?
     };
 
-    let Some(jsessionid) = extract_jsessionid(&set_cookie) else {
-        return with_cors(Response::error("JSESSIONID not found in LMS response", 502)?);
-    };
+    if let Some(set_cookie) = lms_res.headers().get("set-cookie")? {
+        if let Some(jsessionid) = extract_jsessionid(&set_cookie) {
+            res.headers_mut().set(
+                "Set-Cookie",
+                &format!("JSESSIONID={jsessionid}; Path=/; HttpOnly; SameSite=Lax"),
+            )?;
+        }
+    }
 
-    let mut res = Response::empty()?.with_status(204);
-    let headers = res.headers_mut();
-    headers.set(
-        "Set-Cookie",
-        &format!("JSESSIONID={jsessionid}; Path=/; HttpOnly; SameSite=Lax"),
-    )?;
-    set_cors_headers(headers)?;
-    Ok(res)
+    with_cors(res)
 }
 
 fn extract_jsessionid(set_cookie: &str) -> Option<String> {
@@ -60,11 +65,15 @@ fn extract_jsessionid(set_cookie: &str) -> Option<String> {
     None
 }
 
+fn is_login_success(body: &str) -> bool {
+    !body.contains("alert")
+}
+
 fn cors_preflight() -> Result<Response> {
     let mut res = Response::empty()?.with_status(204);
     let headers = res.headers_mut();
     set_cors_headers(headers)?;
-    headers.set("Access-Control-Allow-Methods", "GET, OPTIONS")?;
+    headers.set("Access-Control-Allow-Methods", "POST, OPTIONS")?;
     headers.set("Access-Control-Allow-Headers", "Content-Type")?;
     Ok(res)
 }
