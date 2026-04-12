@@ -5,9 +5,10 @@ use std::sync::OnceLock;
 use worker::*;
 
 const FRONTEND_ORIGIN: &str = "http://localhost:3000";
-const LMS_LOGIN_URL: &str = "https://lms.pknu.ac.kr/ilos/lo/login.acl";
-const LMS_MAIN_URL: &str = "https://lms.pknu.ac.kr/ilos/main/main_form.acl";
-const LMS_TODO_URL: &str = "https://lms.pknu.ac.kr/ilos/mp/todo_list.acl";
+const LMS_BASE_URL: &str = "https://lms.pknu.ac.kr";
+const LMS_LOGIN_PATH: &str = "/ilos/lo/login.acl";
+const LMS_MAIN_PATH: &str = "/ilos/main/main_form.acl";
+const LMS_TODO_PATH: &str = "/ilos/mp/todo_list.acl";
 
 #[event(fetch)]
 async fn fetch(req: Request, _env: Env, _ctx: Context) -> Result<Response> {
@@ -33,7 +34,8 @@ async fn login(mut req: Request) -> Result<Response> {
     init.with_redirect(RequestRedirect::Manual);
     init.with_body(Some(login_body.into()));
 
-    let mut lms_req = Request::new_with_init(LMS_LOGIN_URL, &init)?;
+    let lms_login_url = lms_url(LMS_LOGIN_PATH);
+    let mut lms_req = Request::new_with_init(&lms_login_url, &init)?;
     let lms_headers = lms_req.headers_mut()?;
     lms_headers.set("Content-Type", "application/x-www-form-urlencoded")?;
 
@@ -64,7 +66,8 @@ async fn lectures(req: Request) -> Result<Response> {
 
     let mut warmup_init = RequestInit::new();
     warmup_init.with_method(Method::Get);
-    let mut warmup_req = Request::new_with_init(LMS_MAIN_URL, &warmup_init)?;
+    let lms_main_url = lms_url(LMS_MAIN_PATH);
+    let mut warmup_req = Request::new_with_init(&lms_main_url, &warmup_init)?;
     if let Some(cookie) = cookie.as_deref() {
         warmup_req.headers_mut()?.set("Cookie", cookie)?;
     }
@@ -72,7 +75,8 @@ async fn lectures(req: Request) -> Result<Response> {
 
     let mut init = RequestInit::new();
     init.with_method(Method::Post);
-    let mut lms_req = Request::new_with_init(LMS_TODO_URL, &init)?;
+    let lms_todo_url = lms_url(LMS_TODO_PATH);
+    let mut lms_req = Request::new_with_init(&lms_todo_url, &init)?;
     if let Some(cookie) = cookie.as_deref() {
         lms_req.headers_mut()?.set("Cookie", cookie)?;
     }
@@ -185,4 +189,8 @@ fn set_cors_headers(headers: &mut Headers) -> Result<()> {
     headers.set("Access-Control-Allow-Credentials", "true")?;
     headers.set("Vary", "Origin")?;
     Ok(())
+}
+
+fn lms_url(path: &str) -> String {
+    format!("{LMS_BASE_URL}{path}")
 }
