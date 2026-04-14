@@ -8,7 +8,6 @@ use crate::{
     utils::{RequestExt as _, ResponseExt as _},
 };
 use regex::Regex;
-use scraper::{Html, Selector};
 use worker::*;
 
 const INTERVAL_TIME: u32 = 240;
@@ -49,12 +48,12 @@ pub async fn handle(mut request: Request) -> Result<Response> {
         let navi_response_data: NaviResponseData = navi_response.json().await?;
         let path = navi_response_data.path.as_str();
         let video_url = extract_video_url(path);
-        let mut video_response = clients::video::fetch(&video_url).await?;
+        let video_response = clients::video::fetch(&video_url).await?;
         if !video_response.ok() {
             return Response::error(VIDEO_UNAVAILABLE, 503);
         }
 
-        let video_response_body = video_response.text().await?;
+        let video_response_headers = video_response.headers();
         let link_sequence = navi_response_data.link_seq.as_str();
         let history_request_body = Some(
             format!("lecture_weeks={sequence}&kjkey={subject_id}&ky={subject_id}&interval_time={INTERVAL_TIME}")
@@ -69,9 +68,9 @@ pub async fn handle(mut request: Request) -> Result<Response> {
                 .into(),
         );
 
-        let duration = match extract_video_duration(&video_response_body) {
+        let duration = match extract_video_duration(video_response_headers) {
             Some(d) => d,
-            None => 3600,
+            None => 7200,
         };
 
         for _ in 0..get_fetch_counts(duration) {
@@ -95,16 +94,11 @@ fn extract_video_url(path: &str) -> String {
         .to_owned()
 }
 
-fn extract_video_duration(body: &str) -> Option<u32> {
-    let document = Html::parse_document(body);
-    let selector = Selector::parse(r#"meta[name="duration"]"#).ok()?;
-
-    document
-        .select(&selector)
-        .next()?
-        .value()
-        .attr("content")
-        .and_then(|value| value.parse().ok())
+fn extract_video_duration(headers: &Headers) -> Option<u32> {
+    headers
+        .get("content-length")
+        .expect("Invalid header name")
+        .and_then(|s| s.parse().ok())
 }
 
 const fn get_fetch_counts(duration: u32) -> u32 {
