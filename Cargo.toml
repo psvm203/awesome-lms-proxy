@@ -8,9 +8,9 @@ authors = ["psvm203 <psvm203@proton.me>"]
 crate-type = ["cdylib"]
 
 [dependencies]
-worker = { version = "0.7" }
-worker-macros = { version = "0.7" }
-regex = "1"
-scraper = "0.24"
-serde = { version = "1", features = ["derive"] }
-serde_urlencoded = "0.7"
+regex = "1.12.3"
+scraper = "0.26.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_urlencoded = "0.7.1"
+worker = "0.8.0"
+worker-macros = "0.8.0"
