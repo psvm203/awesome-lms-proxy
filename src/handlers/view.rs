@@ -11,15 +11,14 @@ use regex::Regex;
 use worker::*;
 
 const INTERVAL_TIME: u32 = 240;
+const DURATION_FALLBACK: u32 = 7200;
 
 pub async fn handle(mut request: Request) -> Result<Response> {
     let request_body = request.text().await?;
-    let view_request_data: ViewRequestData = match serde_urlencoded::from_str(&request_body) {
-        Ok(request) => request,
-        Err(_) => return Response::error(INVALID_REQUEST_BODY, 400),
+    let Ok(view_request_data) = serde_urlencoded::from_str::<ViewRequestData>(&request_body) else {
+        return Response::error(INVALID_REQUEST_BODY, 400);
     };
 
-    let sequence = view_request_data.sequence.as_str();
     let connect_params = view_request_data.to_connect_params();
     let Some(cookie) = request.get_cookie() else {
         return Response::error(NO_CREDENTIALS, 401);
@@ -30,6 +29,7 @@ pub async fn handle(mut request: Request) -> Result<Response> {
         return Response::error(CONNECT_PAGE_UNAVAILABLE, 503);
     }
 
+    let sequence = view_request_data.sequence.as_str();
     let view_form_request_body = Some(format!("lecture_weeks={sequence}").into());
     let mut view_form_response = clients::view_form::fetch(&cookie, view_form_request_body).await?;
     if !view_form_response.ok() {
@@ -44,15 +44,15 @@ pub async fn handle(mut request: Request) -> Result<Response> {
         let navi_request_body =
             Some(format!("lecture_weeks={sequence}&item_id={item_id}&ky={subject_id}").into());
 
-        let mut navi_response = clients::navi::fetch(&cookie, navi_request_body).await?;
-        let navi_response_data: NaviResponseData = navi_response.json().await?;
         let mut list_response = clients::list::fetch(&cookie).await?;
         if !list_response.ok() {
             return Response::error(LIST_PAGE_UNAVAILABLE, 503);
         }
 
-        let list_response_body = list_response.text().await?;
+        let mut navi_response = clients::navi::fetch(&cookie, navi_request_body).await?;
+        let navi_response_data: NaviResponseData = navi_response.json().await?;
         let link_sequence = navi_response_data.link_seq.as_str();
+        let list_response_body = list_response.text().await?;
         let history_request_body = Some(
             format!("lecture_weeks={sequence}&kjkey={subject_id}&ky={subject_id}&interval_time={INTERVAL_TIME}")
                 .into(),
@@ -66,10 +66,8 @@ pub async fn handle(mut request: Request) -> Result<Response> {
                 .into(),
         );
 
-        let duration = match extract_video_duration(&item_id, &list_response_body) {
-            Some(d) => d,
-            None => 7200,
-        };
+        let duration =
+            extract_video_duration(&item_id, &list_response_body).map_or(DURATION_FALLBACK, |d| d);
 
         for _ in 0..get_fetch_counts(duration) {
             clients::view::fetch(&cookie, view_request_body.clone()).await?;
