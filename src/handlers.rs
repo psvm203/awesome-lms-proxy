@@ -17,6 +17,6 @@ pub mod error_messages {
     pub const CONNECT_PAGE_UNAVAILABLE: &str = "Connect page temporarily unavailable";
     pub const VIEW_FORM_UNAVAILABLE: &str = "View form temporarily unavailable";
     pub const INVALID_REQUEST_BODY: &str = "Invalid request body";
-    pub const VIDEO_UNAVAILABLE: &str = "Lecture video unavailable";
+    pub const LIST_PAGE_UNAVAILABLE: &str = "List page temporarily unavailable";
     pub const NOT_FOUND: &str = "Not found";
 }

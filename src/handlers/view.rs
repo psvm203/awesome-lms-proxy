@@ -46,14 +46,12 @@ pub async fn handle(mut request: Request) -> Result<Response> {
 
         let mut navi_response = clients::navi::fetch(&cookie, navi_request_body).await?;
         let navi_response_data: NaviResponseData = navi_response.json().await?;
-        let path = navi_response_data.path.as_str();
-        let video_url = extract_video_url(path);
-        let video_response = clients::video::fetch(&video_url).await?;
-        if !video_response.ok() {
-            return Response::error(VIDEO_UNAVAILABLE, 503);
+        let mut list_response = clients::list::fetch(&cookie).await?;
+        if !list_response.ok() {
+            return Response::error(LIST_PAGE_UNAVAILABLE, 503);
         }
 
-        let video_response_headers = video_response.headers();
+        let list_response_body = list_response.text().await?;
         let link_sequence = navi_response_data.link_seq.as_str();
         let history_request_body = Some(
             format!("lecture_weeks={sequence}&kjkey={subject_id}&ky={subject_id}&interval_time={INTERVAL_TIME}")
@@ -68,7 +66,7 @@ pub async fn handle(mut request: Request) -> Result<Response> {
                 .into(),
         );
 
-        let duration = match extract_video_duration(video_response_headers) {
+        let duration = match extract_video_duration(&item_id, &list_response_body) {
             Some(d) => d,
             None => 7200,
         };
@@ -89,16 +87,34 @@ fn extract_items(body: &str) -> Vec<String> {
         .collect()
 }
 
-fn extract_video_url(path: &str) -> String {
-    path.replacen("/http-server", "https://vod.pknu.ac.kr/contents", 1)
-        .to_owned()
+fn extract_video_duration(item_id: &str, body: &str) -> Option<u32> {
+    let re = Regex::new(&format!(
+        "(?s){item_id}.*?([0-9:]{{4,}})\\s\\/\\s([0-9:]{{4,}})<\\/div>"
+    ))
+    .expect("Invalid regex");
+
+    let capture = re.captures(body)?;
+    let current_time = parse_time(capture.get(1)?.as_str())?;
+    let video_time = parse_time(capture.get(2)?.as_str())?;
+
+    if current_time >= video_time {
+        return Some(0);
+    }
+
+    Some(video_time - current_time)
 }
 
-fn extract_video_duration(headers: &Headers) -> Option<u32> {
-    headers
-        .get("content-length")
-        .expect("Invalid header name")
-        .and_then(|s| s.parse().ok())
+fn parse_time(time: &str) -> Option<u32> {
+    let parts: Vec<u32> = time
+        .split(':')
+        .map(|p| p.parse().ok())
+        .collect::<Option<Vec<_>>>()?;
+
+    match parts.as_slice() {
+        [h, m, s] => Some(h * 3600 + m * 60 + s),
+        [m, s] => Some(m * 60 + s),
+        _ => None,
+    }
 }
 
 const fn get_fetch_counts(duration: u32) -> u32 {
