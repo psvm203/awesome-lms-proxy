@@ -1,4 +1,4 @@
-use crate::{clients::BASE_URL, utils::HeadersExt};
+use crate::{clients::BASE_URL, utils::HeadersExt as _};
 use worker::{wasm_bindgen::JsValue, *};
 
 const LOGIN_PATH: &str = "/ilos/lo/login.acl";

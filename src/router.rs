@@ -5,9 +5,10 @@ const FRONTEND_ORIGIN: &str = "http://localhost:3000";
 
 pub async fn dispatch(request: Request) -> Result<Response> {
     let response = match (request.method(), request.path().as_str()) {
-        (Method::Options, _) => handler::preflight::handle().await,
+        (Method::Options, _) => handler::preflight::handle(),
         (Method::Post, "/login") => handler::login::handle(request).await,
         (Method::Get, "/lectures") => handler::lectures::handle(request).await,
+        (Method::Post, "/view") => handler::view::handle(request).await,
         _ => handler::not_found::handle(),
     }?;
 

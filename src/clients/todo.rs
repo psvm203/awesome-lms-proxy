@@ -1,4 +1,4 @@
-use crate::{clients::BASE_URL, utils::HeadersExt};
+use crate::{clients::BASE_URL, utils::HeadersExt as _};
 use worker::*;
 
 const TODO_PATH: &str = "/ilos/mp/todo_list.acl";

@@ -1,12 +1,14 @@
-use crate::handler::error_messages::*;
-use crate::model::lecture::Lecture;
-use crate::{clients, utils::ResponseExt};
+use crate::{
+    clients,
+    handler::error_messages::*,
+    model::lecture::Lecture,
+    utils::{RequestExt as _, ResponseExt as _},
+};
 use worker::*;
 
 pub async fn handle(request: Request) -> Result<Response> {
-    let cookie = match request.headers().get("Cookie")? {
-        Some(c) => c,
-        None => return Response::error(NO_CREDENTIALS, 401),
+    let Some(cookie) = request.get_cookie() else {
+        return Response::error(NO_CREDENTIALS, 401);
     };
 
     let main_page_response = clients::main_page::fetch(&cookie).await?;
@@ -25,10 +27,12 @@ pub async fn handle(request: Request) -> Result<Response> {
     }
 
     if !is_body_valid(&response_body) {
-        return Response::error(TODO_PAGE_UNAVAILABLE, 503);
+        return Response::error(PARSE_ERROR, 503);
     }
 
-    let lectures = Lecture::extract_lectures(&response_body);
+    let Some(lectures) = Lecture::extract_lectures(&response_body) else {
+        return Response::error(PARSE_ERROR, 500);
+    };
 
     Response::from_json(&lectures)
 }

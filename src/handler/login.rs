@@ -1,7 +1,7 @@
 use crate::{
     clients,
     handler::error_messages::*,
-    utils::{HeadersExt, ResponseExt},
+    utils::{HeadersExt as _, ResponseExt as _},
 };
 use regex::Regex;
 use worker::*;
@@ -27,9 +27,8 @@ pub async fn handle(mut request: Request) -> Result<Response> {
     }
 
     let cookies = login_response.headers().get_all("Set-Cookie")?;
-    let session_id = match extract_session_id(cookies) {
-        Some(id) => id,
-        None => return Response::error(LOGIN_UNAVAILABLE, 503),
+    let Some(session_id) = extract_session_id(cookies) else {
+        return Response::error(PARSE_ERROR, 500);
     };
 
     let headers =
@@ -51,11 +50,9 @@ fn login_error(body: &str) -> bool {
 }
 
 fn extract_session_id(cookies: Vec<String>) -> Option<String> {
-    let re = Regex::new(r"JSESSIONID=([^;]+)").expect("Invalid regex");
+    let re = Regex::new("JSESSIONID=([^;]+);").expect("Invalid regex");
 
-    cookies.into_iter().find_map(|cookie| {
-        re.captures(&cookie)
-            .and_then(|cap| cap.get(1))
-            .map(|m| m.as_str().to_owned())
-    })
+    cookies
+        .into_iter()
+        .find_map(|cookie| re.captures(&cookie)?.get(1).map(|m| m.as_str().to_owned()))
 }

@@ -35,6 +35,7 @@ dependencies = [
  "regex",
  "scraper",
  "serde",
+ "serde_urlencoded",
  "worker",
  "worker-macros",
 ]

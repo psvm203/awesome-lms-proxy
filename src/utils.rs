@@ -41,3 +41,13 @@ impl ResponseExt for Response {
         (300..400).contains(&self.status_code())
     }
 }
+
+pub trait RequestExt {
+    fn get_cookie(&self) -> Option<String>;
+}
+
+impl RequestExt for Request {
+    fn get_cookie(&self) -> Option<String> {
+        self.headers().get("Cookie").expect("Invalid header name")
+    }
+}
