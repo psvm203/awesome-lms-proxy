@@ -32,7 +32,7 @@ pub async fn handle(mut request: Request) -> Result<Response> {
     };
 
     let headers =
-        Headers::new().with_set_cookie(&format!("JSESSIONID={session_id}; Path=/; HttpOnly"));
+        Headers::new().with_set_cookie(&format!("JSESSIONID={session_id}; Path=/; HttpOnly; SameSite=None; Secure"));
 
     Ok(Response::empty()?.with_status(204).with_headers(headers))
 }
