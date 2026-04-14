@@ -8,9 +8,6 @@ pub struct ViewRequestData {
 
 impl ViewRequestData {
     pub fn to_connect_params(&self) -> String {
-        format!(
-            "SEQ={}&gubun=lecture_weeks&KJKEY={}",
-            self.sequence, self.subject_id
-        )
+        format!("SEQ={}&KJKEY={}", self.sequence, self.subject_id)
     }
 }
