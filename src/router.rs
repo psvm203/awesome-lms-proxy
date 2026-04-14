@@ -1,7 +1,7 @@
 use crate::handlers;
 use worker::*;
 
-const FRONTEND_ORIGIN: &str = "https://psvm203.github.io/awesome-lms";
+const FRONTEND_ORIGIN: &str = "https://psvm203.github.io";
 
 pub async fn dispatch(request: Request) -> Result<Response> {
     let response = match (request.method(), request.path().as_str()) {
