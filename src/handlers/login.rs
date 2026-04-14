@@ -1,6 +1,6 @@
 use crate::{
     clients,
-    handler::error_messages::*,
+    handlers::error_messages::*,
     utils::{HeadersExt as _, ResponseExt as _},
 };
 use regex::Regex;

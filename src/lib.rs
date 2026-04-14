@@ -1,6 +1,6 @@
 mod clients;
-mod handler;
-mod model;
+mod handlers;
+mod models;
 mod router;
 mod utils;
 

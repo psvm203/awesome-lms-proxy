@@ -1,7 +1,7 @@
 use crate::{
     clients,
-    handler::error_messages::*,
-    model::lecture::Lecture,
+    handlers::error_messages::*,
+    models::lecture::Lecture,
     utils::{RequestExt as _, ResponseExt as _},
 };
 use worker::*;

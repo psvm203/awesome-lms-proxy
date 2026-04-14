@@ -1,7 +1,7 @@
 use crate::{
     clients,
-    handler::{error_messages::*, lectures},
-    model::{
+    handlers::{error_messages::*, lectures},
+    models::{
         history_response_data::HistoryResponseData, navi_response_data::NaviResponseData,
         view_request_data::ViewRequestData,
     },

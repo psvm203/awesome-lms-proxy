@@ -1,15 +1,15 @@
-use crate::handler;
+use crate::handlers;
 use worker::*;
 
 const FRONTEND_ORIGIN: &str = "http://localhost:3000";
 
 pub async fn dispatch(request: Request) -> Result<Response> {
     let response = match (request.method(), request.path().as_str()) {
-        (Method::Options, _) => handler::preflight::handle(),
-        (Method::Post, "/login") => handler::login::handle(request).await,
-        (Method::Get, "/lectures") => handler::lectures::handle(request).await,
-        (Method::Post, "/view") => handler::view::handle(request).await,
-        _ => handler::not_found::handle(),
+        (Method::Options, _) => handlers::preflight::handle(),
+        (Method::Post, "/login") => handlers::login::handle(request).await,
+        (Method::Get, "/lectures") => handlers::lectures::handle(request).await,
+        (Method::Post, "/view") => handlers::view::handle(request).await,
+        _ => handlers::not_found::handle(),
     }?;
 
     set_cors(response)
