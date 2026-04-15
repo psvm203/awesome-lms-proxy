@@ -34,7 +34,7 @@ pub async fn handle(mut request: Request) -> Result<Response> {
     };
 
     let headers = Headers::new().with_set_cookie(&format!(
-        "JSESSIONID={session_id}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age={COOKIE_MAX_AGE}"
+        "JSESSIONID={session_id}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age={COOKIE_MAX_AGE}; Partitioned"
     ));
 
     Ok(Response::empty()?.with_status(204).with_headers(headers))
