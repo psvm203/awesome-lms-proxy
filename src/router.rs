@@ -10,6 +10,7 @@ pub async fn dispatch(request: Request) -> Result<Response> {
         (Method::Get, "/lectures") => handlers::lectures::handle(request).await,
         (Method::Post, "/view") => handlers::view::handle(request).await,
         (Method::Get, "/video") => handlers::video::handle(request).await,
+        (Method::Post, "/reset") => handlers::reset::handle(request).await,
         _ => handlers::not_found::handle(),
     }?;
 
