@@ -8,7 +8,7 @@ use crate::{
     utils::{RequestExt as _, ResponseExt as _},
 };
 use regex::Regex;
-use worker::*;
+use worker::{js_sys::Math::random, *};
 
 const INTERVAL_TIME: u32 = 240;
 const DURATION_FALLBACK: u32 = 7200;
@@ -74,7 +74,7 @@ pub async fn handle(mut request: Request) -> Result<Response> {
             clients::view::fetch(&cookie, view_request_body.clone()).await?;
         }
 
-        let random_time = rand::random::<u8>();
+        let random_time = (random() * f64::from(INTERVAL_TIME)) as u32;
         let history_request_body = Some(format!("lecture_weeks={sequence}&kjkey={subject_id}&ky={subject_id}&interval_time={random_time}").into());
         let mut history_response = clients::history::fetch(&cookie, history_request_body).await?;
         let history_response_data: HistoryResponseData = history_response.json().await?;
