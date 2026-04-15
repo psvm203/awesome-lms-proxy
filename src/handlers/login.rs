@@ -6,6 +6,8 @@ use crate::{
 use regex::Regex;
 use worker::*;
 
+const COOKIE_MAX_AGE: &str = "86400";
+
 pub async fn handle(mut request: Request) -> Result<Response> {
     let request_body = Some(request.text().await?.into());
     let mut login_response = clients::login::fetch(request_body).await?;
@@ -32,7 +34,7 @@ pub async fn handle(mut request: Request) -> Result<Response> {
     };
 
     let headers = Headers::new().with_set_cookie(&format!(
-        "JSESSIONID={session_id}; Path=/; HttpOnly; SameSite=None; Secure"
+        "JSESSIONID={session_id}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age={COOKIE_MAX_AGE}"
     ));
 
     Ok(Response::empty()?.with_status(204).with_headers(headers))
