@@ -73,6 +73,14 @@ pub async fn handle(mut request: Request) -> Result<Response> {
         for _ in 0..get_fetch_counts(duration) {
             clients::view::fetch(&cookie, view_request_body.clone()).await?;
         }
+
+        let random_time = rand::random::<u8>();
+        let history_request_body = Some(format!("lecture_weeks={sequence}&kjkey={subject_id}&ky={subject_id}&interval_time={random_time}").into());
+        let mut history_response = clients::history::fetch(&cookie, history_request_body).await?;
+        let history_response_data: HistoryResponseData = history_response.json().await?;
+        let his_no = history_response_data.his_no.as_str();
+        let view_request_body = Some(format!("lecture_weeks={sequence}&link_seq={link_sequence}&his_no={his_no}&ky={subject_id}&interval_time={random_time}").into());
+        clients::view::fetch(&cookie, view_request_body.clone()).await?;
     }
 
     lectures::handle(request).await
