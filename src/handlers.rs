@@ -2,6 +2,7 @@ pub mod lectures;
 pub mod login;
 pub mod not_found;
 pub mod preflight;
+pub mod video;
 pub mod view;
 
 pub mod error_messages {

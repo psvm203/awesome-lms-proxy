@@ -89,7 +89,7 @@ pub async fn handle(mut request: Request) -> Result<Response> {
     lectures::handle(request).await
 }
 
-fn extract_items(body: &str) -> Vec<String> {
+pub fn extract_items(body: &str) -> Vec<String> {
     let re = Regex::new(r#"<div class="item-title-lesson.*val="([^\^]*)"#).expect("Invalid regex");
 
     re.captures_iter(body)
