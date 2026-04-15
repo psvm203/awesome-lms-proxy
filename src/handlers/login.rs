@@ -9,7 +9,7 @@ use worker::*;
 pub async fn handle(mut request: Request) -> Result<Response> {
     let request_body = Some(request.text().await?.into());
     let mut login_response = clients::login::fetch(request_body).await?;
-    if !login_response.redirect() {
+    if login_response.error() {
         return Response::error(LOGIN_UNAVAILABLE, 503);
     }
 
@@ -31,8 +31,9 @@ pub async fn handle(mut request: Request) -> Result<Response> {
         return Response::error(PARSE_ERROR, 500);
     };
 
-    let headers =
-        Headers::new().with_set_cookie(&format!("JSESSIONID={session_id}; Path=/; HttpOnly; SameSite=None; Secure"));
+    let headers = Headers::new().with_set_cookie(&format!(
+        "JSESSIONID={session_id}; Path=/; HttpOnly; SameSite=None; Secure"
+    ));
 
     Ok(Response::empty()?.with_status(204).with_headers(headers))
 }

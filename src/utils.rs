@@ -30,6 +30,7 @@ impl HeadersExt for Headers {
 pub trait ResponseExt {
     fn ok(&self) -> bool;
     fn redirect(&self) -> bool;
+    fn error(&self) -> bool;
 }
 
 impl ResponseExt for Response {
@@ -39,6 +40,10 @@ impl ResponseExt for Response {
 
     fn redirect(&self) -> bool {
         (300..400).contains(&self.status_code())
+    }
+
+    fn error(&self) -> bool {
+        (400..600).contains(&self.status_code())
     }
 }
 
