@@ -8,7 +8,6 @@ authors = ["psvm203 <psvm203@proton.me>"]
 crate-type = ["cdylib"]
 
 [dependencies]
-rand = "0.10.1"
 regex = "1.12.3"
 scraper = "0.26.0"
 serde = { version = "1.0.228", features = ["derive"] }
