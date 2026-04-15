@@ -44,15 +44,10 @@ pub async fn handle(mut request: Request) -> Result<Response> {
         let navi_request_body =
             Some(format!("lecture_weeks={sequence}&item_id={item_id}&ky={subject_id}").into());
 
-        let mut list_response = clients::list::fetch(&cookie).await?;
-        if !list_response.ok() {
-            return Response::error(LIST_PAGE_UNAVAILABLE, 503);
-        }
-
         let mut navi_response = clients::navi::fetch(&cookie, navi_request_body).await?;
         let navi_response_data: NaviResponseData = navi_response.json().await?;
         let link_sequence = navi_response_data.link_seq.as_str();
-        let list_response_body = list_response.text().await?;
+
         let history_request_body = Some(
             format!("lecture_weeks={sequence}&kjkey={subject_id}&ky={subject_id}&interval_time={INTERVAL_TIME}")
                 .into(),
@@ -66,6 +61,12 @@ pub async fn handle(mut request: Request) -> Result<Response> {
                 .into(),
         );
 
+        let mut list_response = clients::list::fetch(&cookie).await?;
+        if !list_response.ok() {
+            return Response::error(LIST_PAGE_UNAVAILABLE, 503);
+        }
+
+        let list_response_body = list_response.text().await?;
         let duration =
             extract_video_duration(&item_id, &list_response_body).map_or(DURATION_FALLBACK, |d| d);
 
